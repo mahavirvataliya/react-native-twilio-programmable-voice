@@ -33,7 +33,6 @@ NSString * const kCachedDeviceToken = @"CachedDeviceToken";
 @implementation RNTwilioVoice {
   NSMutableDictionary *_settings;
   NSMutableDictionary *_callParams;
-  NSString *_tokenUrl;
   NSString *_token;
 }
 
@@ -146,6 +145,8 @@ RCT_EXPORT_METHOD(unregister) {
   NSString *accessToken = [self fetchAccessToken];
   NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
   if ([cachedDeviceToken length] > 0) {
+      [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
+      
       [TwilioVoice unregisterWithAccessToken:accessToken
                                  deviceToken:cachedDeviceToken
                                   completion:^(NSError * _Nullable error) {
@@ -210,14 +211,7 @@ RCT_REMAP_METHOD(getCallInvite,
 }
 
 - (NSString *)fetchAccessToken {
-  if (_tokenUrl) {
-    NSString *accessToken = [NSString stringWithContentsOfURL:[NSURL URLWithString:_tokenUrl]
-                                                     encoding:NSUTF8StringEncoding
-                                                        error:nil];
-    return accessToken;
-  } else {
-    return _token;
-  }
+  return _token;
 }
 
 #pragma mark - PKPushRegistryDelegate
@@ -232,9 +226,17 @@ RCT_REMAP_METHOD(getCallInvite,
                                                         ntohl(tokenBytes[6]), ntohl(tokenBytes[7])];
     NSString *accessToken = [self fetchAccessToken];
     NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
-    if (![cachedDeviceToken isEqualToString:deviceTokenString]) {
-        cachedDeviceToken = deviceTokenString;
 
+    NSMutableString *hexString = [NSMutableString string];
+    NSUInteger voipTokenLength = credentials.token.length;
+    const unsigned char *bytes = credentials.token.bytes;
+    for (NSUInteger i = 0; i < voipTokenLength; i++) {
+      [hexString appendFormat:@"%02x", bytes[i]];
+    }
+  
+    if (![cachedDeviceToken isEqualToString:deviceTokenString]) {
+        NSLog(@"Registering new device token");
+        cachedDeviceToken = deviceTokenString;
         /*
          * Perform registration if a new device token is detected.
          */
@@ -255,9 +257,12 @@ RCT_REMAP_METHOD(getCallInvite,
                   * Save the device token after successfully registered.
                   */
                  [[NSUserDefaults standardUserDefaults] setObject:cachedDeviceToken forKey:kCachedDeviceToken];
-                 [self sendEventWithName:@"deviceReady" body:nil];
+                 
+                 [self sendEventWithName:@"deviceReady" body:[hexString copy]];
              }
          }];
+    } else {
+      [self sendEventWithName:@"deviceReady" body:[hexString copy]];
     }
   }
 }
@@ -270,6 +275,9 @@ RCT_REMAP_METHOD(getCallInvite,
 
     NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
     if ([cachedDeviceToken length] > 0) {
+        
+        [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
+        
         [TwilioVoice unregisterWithAccessToken:accessToken
                                                 deviceToken:cachedDeviceToken
                                                  completion:^(NSError * _Nullable error) {
@@ -293,7 +301,7 @@ RCT_REMAP_METHOD(getCallInvite,
       // The Voice SDK will use main queue to invoke `cancelledCallInviteReceived:error` when delegate queue is not passed
       if (![TwilioVoice handleNotification:payload.dictionaryPayload delegate:self delegateQueue: nil]) {
           NSLog(@"This is not a valid Twilio Voice notification.");
-      }
+      } 
   }
 }
 

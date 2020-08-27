@@ -25,6 +25,9 @@ import com.twilio.voice.CancelledCallInvite;
 
 import java.util.List;
 
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import static android.content.Context.ACTIVITY_SERVICE;
 
 import static com.hoxfon.react.RNTwilioVoice.TwilioVoiceModule.TAG;
@@ -44,6 +47,7 @@ import static com.hoxfon.react.RNTwilioVoice.TwilioVoiceModule.HANGUP_NOTIFICATI
 import static com.hoxfon.react.RNTwilioVoice.TwilioVoiceModule.PREFERENCE_KEY;
 import static com.hoxfon.react.RNTwilioVoice.TwilioVoiceModule.ACTION_CLEAR_MISSED_CALLS_COUNT;
 import static com.hoxfon.react.RNTwilioVoice.TwilioVoiceModule.CLEAR_MISSED_CALLS_NOTIFICATION_ID;
+
 
 
 public class CallNotificationManager {
@@ -113,6 +117,18 @@ public class CallNotificationManager {
         return launchIntent;
     }
 
+    private Spannable getActionText(String stringRes, int colorRes) {
+        Spannable spannable = new SpannableString(stringRes);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+        // This will only work for cases where the Notification.Builder has a fullscreen intent set
+        // Notification.Builder that does not have a full screen intent will take the color of the
+        // app and the following leads to a no-op.
+        spannable.setSpan(
+            new ForegroundColorSpan(colorRes), 0, spannable.length(), 0);
+        }
+        return spannable;
+    }
+
     public void createIncomingCallNotification(ReactApplicationContext context,
                                                CallInvite callInvite,
                                                int notificationId,
@@ -140,13 +156,16 @@ public class CallNotificationManager {
 
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setPriority(NotificationManager.IMPORTANCE_HIGH)
+                        .setTimeoutAfter(3000)
+                        .setDefaults(Notification.DEFAULT_ALL)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setCategory(NotificationCompat.CATEGORY_CALL)
                         .setSmallIcon(R.drawable.ic_call_white_24dp)
                         .setContentTitle("Incoming call")
                         .setContentText(callInvite.getFrom() + " is calling")
                         .setOngoing(true)
+                        .setOnlyAlertOnce(true)
                         .setAutoCancel(true)
                         .setExtras(extras)
                         .setFullScreenIntent(pendingIntent, true);
@@ -168,7 +187,7 @@ public class CallNotificationManager {
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingRejectIntent = PendingIntent.getBroadcast(context, 1, rejectIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-        notificationBuilder.addAction(0, "DISMISS", pendingRejectIntent);
+        notificationBuilder.addAction(0, getActionText( "DISMISS", Color.parseColor("#800000")), pendingRejectIntent);
 
         // Answer action
         Intent answerIntent = new Intent(ACTION_ANSWER_CALL);
@@ -177,7 +196,7 @@ public class CallNotificationManager {
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingAnswerIntent = PendingIntent.getBroadcast(context, 0, answerIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-        notificationBuilder.addAction(R.drawable.ic_call_white_24dp, "ANSWER", pendingAnswerIntent);
+        notificationBuilder.addAction(R.drawable.ic_call_white_24dp, getActionText("ANSWER", Color.parseColor("#008000")), pendingAnswerIntent);
 
         notificationManager.notify(notificationId, notificationBuilder.build());
         TwilioVoiceModule.callNotificationMap.put(INCOMING_NOTIFICATION_PREFIX+callInvite.getCallSid(), notificationId);
