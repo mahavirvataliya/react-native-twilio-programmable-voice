@@ -235,7 +235,7 @@ RCT_REMAP_METHOD(getCallInvite,
     }
   
     if (![cachedDeviceToken isEqualToString:deviceTokenString]) {
-        NSLog(@"Registering new device token");
+        NSLog(@"pushRegistry:didUpdatePushCredentials:forType:Registering new device token");
         cachedDeviceToken = deviceTokenString;
         /*
          * Perform registration if a new device token is detected.
@@ -262,6 +262,7 @@ RCT_REMAP_METHOD(getCallInvite,
              }
          }];
     } else {
+      NSLog(@"pushRegistry:didUpdatePushCredentials:forType:deviceReady with cached device token");
       [self sendEventWithName:@"deviceReady" body:[hexString copy]];
     }
   }
