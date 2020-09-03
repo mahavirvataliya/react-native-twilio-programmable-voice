@@ -157,7 +157,7 @@ public class CallNotificationManager {
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
                         .setPriority(NotificationManager.IMPORTANCE_HIGH)
-                        .setTimeoutAfter(3000)
+                        // .setTimeoutAfter(3000)
                         .setDefaults(Notification.DEFAULT_ALL)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -165,7 +165,7 @@ public class CallNotificationManager {
                         .setContentTitle("Incoming call")
                         .setContentText(callInvite.getFrom() + " is calling")
                         .setOngoing(true)
-                        .setOnlyAlertOnce(true)
+                        // .setOnlyAlertOnce(true)
                         .setAutoCancel(true)
                         .setExtras(extras)
                         .setFullScreenIntent(pendingIntent, true);
