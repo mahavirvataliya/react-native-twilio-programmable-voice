@@ -21,7 +21,14 @@ const _eventHandlers = {
     connectionDidDisconnect: new Map(),
     callStateRinging: new Map(),
     callInviteCancelled: new Map(),
-    callRejected: new Map(),
+    // callRejected: new Map(),
+}
+
+if(Platform.OS === 'android') {
+    _eventHandlers.proximity = new Map();
+    _eventHandlers.wiredHeadset = new Map();
+} else {
+    _eventHandlers.callRejected = new Map();
 }
 
 const Twilio = {

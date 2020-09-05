@@ -97,13 +97,19 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
                                         false,
                                         appImportance
                                 );
-                                // app is not in foreground
-                                if (appImportance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                                    context.startActivity(launchIntent);
-                                }
                                 Intent intent = new Intent(ACTION_INCOMING_CALL);
                                 intent.putExtra(INCOMING_CALL_NOTIFICATION_ID, notificationId);
                                 intent.putExtra(INCOMING_CALL_INVITE, callInvite);
+                                // app is not in foreground
+                                if (appImportance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                                    callNotificationManager.createIncomingCallNotification(
+                                                (ReactApplicationContext) context, callInvite, notificationId,
+                                                launchIntent);
+                                    context.startActivity(launchIntent);
+                                }
+                                // Intent intent = new Intent(ACTION_INCOMING_CALL);
+                                // intent.putExtra(INCOMING_CALL_NOTIFICATION_ID, notificationId);
+                                // intent.putExtra(INCOMING_CALL_INVITE, callInvite);
                                 LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
                             } else {
                                 // Otherwise wait for construction, then handle the incoming call
