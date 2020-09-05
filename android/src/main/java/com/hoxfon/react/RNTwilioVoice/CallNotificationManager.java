@@ -156,20 +156,22 @@ public class CallNotificationManager {
 
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
-                        .setPriority(NotificationManager.IMPORTANCE_HIGH)
-                        // .setTimeoutAfter(3000)
+                        .setAutoCancel(true)
                         .setDefaults(Notification.DEFAULT_ALL)
-                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setCategory(NotificationCompat.CATEGORY_CALL)
-                        .setSmallIcon(R.drawable.ic_call_white_24dp)
+                        .setOngoing(true)
+                        .setFullScreenIntent(pendingIntent, true)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setOnlyAlertOnce(true)
+                        .setVibrate(new long[]{0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000})
+                        // .setPriority(NotificationManager.IMPORTANCE_HIGH)
+                        // .setPriority(Notification.PRIORITY_MAX)
                         .setContentTitle("Incoming call")
                         .setContentText(callInvite.getFrom() + " is calling")
-                        .setOngoing(true)
-                        // .setOnlyAlertOnce(true)
-                        .setAutoCancel(true)
-                        .setExtras(extras)
-                        .setFullScreenIntent(pendingIntent, true);
-
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                        .setSmallIcon(R.drawable.ic_call_white_24dp)
+                        .setExtras(extras);
+                        
         // build notification large icon
         Resources res = context.getResources();
         int largeIconResId = res.getIdentifier("ic_launcher", "mipmap", context.getPackageName());
@@ -203,13 +205,17 @@ public class CallNotificationManager {
     }
 
     public void initCallNotificationsChannel(NotificationManager notificationManager) {
-        if (Build.VERSION.SDK_INT < 26) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return;
         }
-        NotificationChannel channel = new NotificationChannel(VOICE_CHANNEL,
-                "Primary Voice Channel", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationChannel channel = new NotificationChannel(VOICE_CHANNEL, "Voice Call", NotificationManager.IMPORTANCE_HIGH);
         channel.setLightColor(Color.GREEN);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        channel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000});
+        channel.enableVibration(true);
+        channel.enableLights(true);
+        channel.setShowBadge(true);
+        channel.setDescription("Voice call notifications");
         notificationManager.createNotificationChannel(channel);
     }
 
@@ -245,7 +251,7 @@ public class CallNotificationManager {
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
                         .setGroup(MISSED_CALLS_GROUP)
                         .setGroupSummary(true)
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setPriority(NotificationCompat.PRIORITY_MAX)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                         .setSmallIcon(R.drawable.ic_call_missed_white_24dp)
@@ -281,6 +287,7 @@ public class CallNotificationManager {
         }
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        initCallNotificationsChannel(notificationManager);
         notificationManager.notify(MISSED_CALLS_NOTIFICATION_ID, notification.build());
     }
 
@@ -312,7 +319,7 @@ public class CallNotificationManager {
                 .setContentText(caller)
                 .setSmallIcon(R.drawable.ic_call_white_24dp)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setOngoing(true)
                 .setUsesChronometer(true)
