@@ -86,6 +86,7 @@ RCT_EXPORT_METHOD(configureCallKit: (NSDictionary *)params) {
     CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
     configuration.maximumCallGroups = 1;
     configuration.maximumCallsPerCallGroup = 1;
+    configuration.includesCallsInRecents = false;
     if (_settings[@"imageName"]) {
       configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
     }

@@ -152,7 +152,7 @@ public class CallNotificationManager {
         /*
          * Create the notification shown in the notification drawer
          */
-        initCallNotificationsChannel(notificationManager);
+        initCallNotificationsChannel(notificationManager, true);
 
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
@@ -204,18 +204,21 @@ public class CallNotificationManager {
         TwilioVoiceModule.callNotificationMap.put(INCOMING_NOTIFICATION_PREFIX+callInvite.getCallSid(), notificationId);
     }
 
-    public void initCallNotificationsChannel(NotificationManager notificationManager) {
+    public void initCallNotificationsChannel(NotificationManager notificationManager, Boolean isIncoming) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return;
         }
         NotificationChannel channel = new NotificationChannel(VOICE_CHANNEL, "Voice Call", NotificationManager.IMPORTANCE_HIGH);
         channel.setLightColor(Color.GREEN);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-        channel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000});
-        channel.enableVibration(true);
-        channel.enableLights(true);
-        channel.setShowBadge(true);
-        channel.setDescription("Voice call notifications");
+        if(isIncoming) {
+            channel.setVibrationPattern(new long[]{0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000});
+            channel.enableVibration(true);
+            channel.enableLights(true);
+            channel.setShowBadge(true);
+            channel.setDescription("Voice call notifications");
+        }
+    
         notificationManager.createNotificationChannel(channel);
     }
 
@@ -251,7 +254,7 @@ public class CallNotificationManager {
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
                         .setGroup(MISSED_CALLS_GROUP)
                         .setGroupSummary(true)
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                         .setSmallIcon(R.drawable.ic_call_missed_white_24dp)
@@ -287,7 +290,7 @@ public class CallNotificationManager {
         }
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        initCallNotificationsChannel(notificationManager);
+        // initCallNotificationsChannel(notificationManager, false);
         notificationManager.notify(MISSED_CALLS_NOTIFICATION_ID, notification.build());
     }
 
@@ -319,7 +322,7 @@ public class CallNotificationManager {
                 .setContentText(caller)
                 .setSmallIcon(R.drawable.ic_call_white_24dp)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setOngoing(true)
                 .setUsesChronometer(true)
@@ -329,7 +332,7 @@ public class CallNotificationManager {
         notification.addAction(0, "HANG UP", pendingHangupIntent);
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         // Create notifications channel (required for API > 25)
-        initCallNotificationsChannel(notificationManager);
+        initCallNotificationsChannel(notificationManager, false);
         notificationManager.notify(HANGUP_NOTIFICATION_ID, notification.build());
     }
 
