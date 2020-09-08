@@ -129,6 +129,12 @@ public class CallNotificationManager {
         return spannable;
     }
 
+    private String sanatizeCallerName(String from) {
+        String from_name = from.getFrom().replace("client:", "");
+        from_name = from_name.replace("_", " ").toUpperCase();
+        return from_name;
+    }
+
     public void createIncomingCallNotification(ReactApplicationContext context,
                                                CallInvite callInvite,
                                                int notificationId,
@@ -154,6 +160,8 @@ public class CallNotificationManager {
          */
         initCallNotificationsChannel(notificationManager, true);
 
+        String from_name = sanatizeCallerName(callInvite.getFrom());
+
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, VOICE_CHANNEL)
                         .setAutoCancel(true)
@@ -167,7 +175,7 @@ public class CallNotificationManager {
                         // .setPriority(NotificationManager.IMPORTANCE_HIGH)
                         // .setPriority(Notification.PRIORITY_MAX)
                         .setContentTitle("Incoming call")
-                        .setContentText(callInvite.getFrom() + " is calling")
+                        .setContentText( from_name + " is calling")
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setSmallIcon(R.drawable.ic_call_white_24dp)
                         .setExtras(extras);
@@ -259,7 +267,7 @@ public class CallNotificationManager {
                         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                         .setSmallIcon(R.drawable.ic_call_missed_white_24dp)
                         .setContentTitle("Missed call")
-                        .setContentText(callInvite.getFrom() + " called")
+                        .setContentText(sanatizeCallerName(callInvite.getFrom()) + " called")
                         .setAutoCancel(true)
                         .setShowWhen(true)
                         .setExtras(extras)
@@ -319,7 +327,7 @@ public class CallNotificationManager {
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context, VOICE_CHANNEL)
                 .setContentTitle("Call in progress")
-                .setContentText(caller)
+                .setContentText(sanatizeCallerName(caller))
                 .setSmallIcon(R.drawable.ic_call_white_24dp)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

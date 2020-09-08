@@ -356,6 +356,8 @@ withCompletionHandler:(void (^)(void))completion {
     NSString *from = @"Unknown";
     if (callInvite.from) {
         from = [callInvite.from stringByReplacingOccurrencesOfString:@"client:" withString:@""];
+        from = [from stringByReplacingOccurrencesOfString:@"_" withString:@" "];
+        from = [from uppercaseString];
     }
     // Always report to CallKit
     [self reportIncomingCallFrom:from withUUID:callInvite.uuid];
