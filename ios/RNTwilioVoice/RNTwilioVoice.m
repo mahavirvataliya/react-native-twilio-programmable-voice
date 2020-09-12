@@ -357,6 +357,9 @@ withCompletionHandler:(void (^)(void))completion {
     if (callInvite.from) {
         from = [callInvite.from stringByReplacingOccurrencesOfString:@"client:" withString:@""];
         from = [from stringByReplacingOccurrencesOfString:@"_" withString:@" "];
+        from = [[from componentsSeparatedByCharactersInSet:
+                            [[NSCharacterSet letterCharacterSet] invertedSet]] componentsJoinedByString:@" "];
+        from = [from stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         from = [from uppercaseString];
     }
     // Always report to CallKit

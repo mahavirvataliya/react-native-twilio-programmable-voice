@@ -130,9 +130,11 @@ public class CallNotificationManager {
     }
 
     private String sanatizeCallerName(String from) {
-        String from_name = from.getFrom().replace("client:", "");
-        from_name = from_name.replace("_", " ").toUpperCase();
-        return from_name;
+        String from_name = from.replace("client:", "");
+        String removedClient = from.replace("client:", "");
+        String removedUserId = removedClient.replaceAll("\\d","");
+        String replaceUnderScore = removedUserId.replaceAll("_", "");
+        return replaceUnderScore.toUpperCase().trim();
     }
 
     public void createIncomingCallNotification(ReactApplicationContext context,
@@ -212,11 +214,16 @@ public class CallNotificationManager {
         TwilioVoiceModule.callNotificationMap.put(INCOMING_NOTIFICATION_PREFIX+callInvite.getCallSid(), notificationId);
     }
 
-    public void initCallNotificationsChannel(NotificationManager notificationManager, Boolean isIncoming) {
+    public void initCallNotificationsChannel(NotificationManager notificationManager, boolean isIncoming) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return;
         }
+
         NotificationChannel channel = new NotificationChannel(VOICE_CHANNEL, "Voice Call", NotificationManager.IMPORTANCE_HIGH);
+        
+        if(!isIncoming) {
+            channel.setImportance(NotificationManager.IMPORTANCE_DEFAULT);
+        }
         channel.setLightColor(Color.GREEN);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         if(isIncoming) {
