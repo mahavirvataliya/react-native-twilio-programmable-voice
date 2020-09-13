@@ -133,7 +133,7 @@ public class CallNotificationManager {
         String from_name = from.replace("client:", "");
         String removedClient = from.replace("client:", "");
         String removedUserId = removedClient.replaceAll("\\d","");
-        String replaceUnderScore = removedUserId.replaceAll("_", "");
+        String replaceUnderScore = removedUserId.replaceAll("_", " ");
         return replaceUnderScore.toUpperCase().trim();
     }
 
