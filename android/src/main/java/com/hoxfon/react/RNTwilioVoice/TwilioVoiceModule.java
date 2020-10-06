@@ -52,8 +52,9 @@ import com.twilio.voice.ConnectOptions;
 import com.twilio.voice.LogLevel;
 import com.twilio.voice.RegistrationException;
 import com.twilio.voice.RegistrationListener;
+import com.twilio.voice.UnregistrationListener;
 import com.twilio.voice.Voice;
-
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -100,6 +101,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
     public static final String CALL_SID_KEY = "CALL_SID";
     public static final String INCOMING_NOTIFICATION_PREFIX = "Incoming_";
     public static final String MISSED_CALLS_GROUP = "MISSED_CALLS";
+    public static final String ACCESS_TOKEN = "ACCESS_TOKEN";
     public static final int MISSED_CALLS_NOTIFICATION_ID = 1;
     public static final int HANGUP_NOTIFICATION_ID = 11;
     public static final int CLEAR_MISSED_CALLS_NOTIFICATION_ID = 21;
@@ -570,6 +572,64 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         promise.resolve(params);
     }
 
+    @ReactMethod
+    public void unregister(Promise promise) {
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "getInstanceId failed", task.getException());
+                            promise.reject(task.getException());
+                            return;
+                        }
+
+                        // Get new Instance ID token
+                        String fcmToken = task.getResult().getToken();
+                        if (fcmToken != null) {
+                            if (BuildConfig.DEBUG) {
+                                Log.d(TAG, "UnRegistering with FCM");
+                            }
+                            if(accessToken == null) {
+                                Log.d(TAG, "accessToken is null");
+                                return;
+                            }
+                            SharedPreferences sharedPref = getReactApplicationContext().getSharedPreferences(PREFERENCE_KEY, Context.MODE_PRIVATE);
+                            SharedPreferences.Editor sharedPrefEditor = sharedPref.edit();
+                            accessToken = sharedPref.getString(ACCESS_TOKEN, null);
+
+                            if(accessToken == null) {
+                                Log.d(TAG, "accessToken is null in preferences");
+                                return;
+                            }
+                            
+                            Voice.unregister(accessToken, Voice.RegistrationChannel.FCM, fcmToken, new UnregistrationListener() {
+                                @Override
+                                public void onUnregistered(String accessToken, String fcmToken) {
+                                    Log.d(TAG, "Successfully unregistered");
+                                    WritableMap params = Arguments.createMap();
+                                    params.putString("message", "Successfully unregistered");
+                                    promise.resolve(params);
+                                }
+
+                                @Override
+                                public void onError(@NonNull RegistrationException registrationException,
+                                                    @NonNull String accessToken,
+                                                    @NonNull String fcmToken) {
+                                    String message = String.format(
+                                            Locale.US,
+                                            "UnRegistration Error: %d, %s",
+                                            registrationException.getErrorCode(),
+                                            registrationException.getMessage());
+                                    Log.e(TAG, message);
+                                    promise.reject(registrationException);
+                                }
+                            });
+                        }
+                    }
+                });
+    }
+
     private void clearIncomingNotification(String callSid) {
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "clearIncomingNotification() callSid: "+ callSid);
@@ -608,6 +668,10 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
                             if (BuildConfig.DEBUG) {
                                 Log.d(TAG, "Registering with FCM");
                             }
+                            SharedPreferences sharedPref = getReactApplicationContext().getSharedPreferences(PREFERENCE_KEY, Context.MODE_PRIVATE);
+                            SharedPreferences.Editor sharedPrefEditor = sharedPref.edit();
+                            sharedPrefEditor.putString(ACCESS_TOKEN, accessToken);
+                            sharedPrefEditor.commit();
                             Voice.register(accessToken, Voice.RegistrationChannel.FCM, fcmToken, registrationListener);
                         }
                     }
@@ -878,7 +942,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
 //            Snackbar.make(coordinatorLayout,
 //                    "Microphone permissions needed. Please allow in your application settings.",
 //                    SNACKBAR_DURATION).show();
-        } else {
+        } else {    
             ActivityCompat.requestPermissions(getCurrentActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, MIC_PERMISSION_REQUEST_CODE);
         }
     }

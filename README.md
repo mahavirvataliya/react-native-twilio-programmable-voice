@@ -102,7 +102,7 @@ platform :ios, '10.0'
 
 target <YOUR_TARGET> do
     ...
-    pod 'TwilioVoice', '~> 5.2.0'
+    pod 'TwilioVoice', '~> 6.0.0'
     ...
 end
 ```

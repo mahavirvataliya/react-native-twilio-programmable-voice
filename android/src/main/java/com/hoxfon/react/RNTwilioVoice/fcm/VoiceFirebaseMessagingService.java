@@ -20,6 +20,7 @@ import com.twilio.voice.CallInvite;
 import com.twilio.voice.CancelledCallInvite;
 import com.twilio.voice.MessageListener;
 import com.twilio.voice.Voice;
+import com.twilio.voice.CallException;
 
 import java.util.Map;
 import java.util.Random;
@@ -71,7 +72,7 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
             Random randomNumberGenerator = new Random(System.currentTimeMillis());
             final int notificationId = randomNumberGenerator.nextInt();
 
-            boolean valid = Voice.handleMessage(data, new MessageListener() {
+            boolean valid = Voice.handleMessage(getApplicationContext(), data, new MessageListener() {
                 @Override
                 public void onCallInvite(final CallInvite callInvite) {
 
@@ -140,10 +141,13 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
                 }
 
                 @Override
-                public void onCancelledCallInvite(final CancelledCallInvite cancelledCallInvite) {
+                public void onCancelledCallInvite(final CancelledCallInvite cancelledCallInvite, final CallException callException) {
                     Handler handler = new Handler(Looper.getMainLooper());
                     handler.post(new Runnable() {
                         public void run() {
+                            ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+                            ReactContext context = mReactInstanceManager.getCurrentReactContext();
+                            VoiceFirebaseMessagingService.this.cancelNotification((ReactApplicationContext)context, cancelledCallInvite);
                             VoiceFirebaseMessagingService.this.sendCancelledCallInviteToActivity(cancelledCallInvite);
                         }
                     });
@@ -169,5 +173,10 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
         Intent intent = new Intent(ACTION_CANCEL_CALL_INVITE);
         intent.putExtra(CANCELLED_CALL_INVITE, cancelledCallInvite);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void cancelNotification(ReactApplicationContext context, CancelledCallInvite cancelledCallInvite) {
+        SoundPoolManager.getInstance((this)).stopRinging();
+        callNotificationManager.removeIncomingCallNotification(context, cancelledCallInvite, 0);
     }
 }

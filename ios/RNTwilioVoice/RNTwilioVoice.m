@@ -147,9 +147,9 @@ RCT_EXPORT_METHOD(unregister) {
   NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
   if ([cachedDeviceToken length] > 0) {
       [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
-      
+      NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
       [TwilioVoice unregisterWithAccessToken:accessToken
-                                 deviceToken:cachedDeviceToken
+                                 deviceToken:cachedDeviceTokenData
                                   completion:^(NSError * _Nullable error) {
                                     if (error) {
                                         NSLog(@"An error occurred while unregistering: %@", [error localizedDescription]);
@@ -242,7 +242,7 @@ RCT_REMAP_METHOD(getCallInvite,
          * Perform registration if a new device token is detected.
          */
         [TwilioVoice registerWithAccessToken:accessToken
-                                 deviceToken:cachedDeviceToken
+                                 deviceToken:credentials.token
                                   completion:^(NSError *error) {
              if (error) {
                  NSLog(@"An error occurred while registering: %@", [error localizedDescription]);
@@ -276,12 +276,15 @@ RCT_REMAP_METHOD(getCallInvite,
     NSString *accessToken = [self fetchAccessToken];
 
     NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
+
     if ([cachedDeviceToken length] > 0) {
         
         [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
         
+        NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
+
         [TwilioVoice unregisterWithAccessToken:accessToken
-                                                deviceToken:cachedDeviceToken
+                                                deviceToken:cachedDeviceTokenData
                                                  completion:^(NSError * _Nullable error) {
                                                    if (error) {
                                                      NSLog(@"An error occurred while unregistering: %@", [error localizedDescription]);
