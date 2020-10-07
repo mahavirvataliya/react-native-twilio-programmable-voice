@@ -11,6 +11,7 @@
 @import TwilioVoice;
 
 NSString * const kCachedDeviceToken = @"CachedDeviceToken";
+NSString * const kCachedDeviceTokenData = @"CachedDeviceTokenData";
 
 @interface RNTwilioVoice () <PKPushRegistryDelegate, TVONotificationDelegate, TVOCallDelegate, CXProviderDelegate>
 
@@ -34,6 +35,7 @@ NSString * const kCachedDeviceToken = @"CachedDeviceToken";
   NSMutableDictionary *_settings;
   NSMutableDictionary *_callParams;
   NSString *_token;
+  NSData *_deviceToken;
 }
 
 NSString * const StateConnecting = @"CONNECTING";
@@ -145,9 +147,10 @@ RCT_EXPORT_METHOD(unregister) {
   NSLog(@"unregister");
   NSString *accessToken = [self fetchAccessToken];
   NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
+  NSData *cachedDeviceTokenData = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceTokenData];
   if ([cachedDeviceToken length] > 0) {
       [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
-      NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
+      // NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
       [TwilioVoice unregisterWithAccessToken:accessToken
                                  deviceToken:cachedDeviceTokenData
                                   completion:^(NSError * _Nullable error) {
@@ -219,6 +222,7 @@ RCT_REMAP_METHOD(getCallInvite,
 - (void)pushRegistry:(PKPushRegistry *)registry didUpdatePushCredentials:(PKPushCredentials *)credentials forType:(NSString *)type {
   NSLog(@"pushRegistry:didUpdatePushCredentials:forType");
 
+  _deviceToken = credentials.token;
   if ([type isEqualToString:PKPushTypeVoIP]) {
     const unsigned *tokenBytes = [credentials.token bytes];
     NSString *deviceTokenString = [NSString stringWithFormat:@"<%08x %08x %08x %08x %08x %08x %08x %08x>",
@@ -258,6 +262,8 @@ RCT_REMAP_METHOD(getCallInvite,
                   * Save the device token after successfully registered.
                   */
                  [[NSUserDefaults standardUserDefaults] setObject:cachedDeviceToken forKey:kCachedDeviceToken];
+
+                 [[NSUserDefaults standardUserDefaults] setObject:_deviceToken forKey:kCachedDeviceTokenData];
                  
                  [self sendEventWithName:@"deviceReady" body:[hexString copy]];
              }
@@ -276,12 +282,13 @@ RCT_REMAP_METHOD(getCallInvite,
     NSString *accessToken = [self fetchAccessToken];
 
     NSString *cachedDeviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceToken];
+    NSData *cachedDeviceTokenData = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceTokenData];
 
     if ([cachedDeviceToken length] > 0) {
         
         [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
         
-        NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
+        // NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
 
         [TwilioVoice unregisterWithAccessToken:accessToken
                                                 deviceToken:cachedDeviceTokenData
