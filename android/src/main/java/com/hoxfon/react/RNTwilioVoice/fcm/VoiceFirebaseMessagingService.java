@@ -98,9 +98,6 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
                                         false,
                                         appImportance
                                 );
-                                Intent intent = new Intent(ACTION_INCOMING_CALL);
-                                intent.putExtra(INCOMING_CALL_NOTIFICATION_ID, notificationId);
-                                intent.putExtra(INCOMING_CALL_INVITE, callInvite);
                                 // app is not in foreground
                                 if (appImportance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
                                     callNotificationManager.createIncomingCallNotification(

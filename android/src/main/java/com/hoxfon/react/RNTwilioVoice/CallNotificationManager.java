@@ -170,18 +170,16 @@ public class CallNotificationManager {
                         .setDefaults(Notification.DEFAULT_ALL)
                         .setCategory(NotificationCompat.CATEGORY_CALL)
                         .setOngoing(true)
-                        .setFullScreenIntent(pendingIntent, true)
                         .setPriority(NotificationCompat.PRIORITY_MAX)
                         .setOnlyAlertOnce(true)
                         .setVibrate(new long[]{0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000, 0, 1000, 500, 1000})
-                        // .setPriority(NotificationManager.IMPORTANCE_HIGH)
-                        // .setPriority(Notification.PRIORITY_MAX)
                         .setContentTitle("Incoming call")
                         .setContentText( from_name + " is calling")
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                         .setSmallIcon(R.drawable.ic_call_white_24dp)
-                        .setExtras(extras);
-                        
+                        .setExtras(extras)
+                        .setFullScreenIntent(pendingIntent, true);
+
         // build notification large icon
         Resources res = context.getResources();
         int largeIconResId = res.getIdentifier("ic_launcher", "mipmap", context.getPackageName());
@@ -220,7 +218,7 @@ public class CallNotificationManager {
         }
 
         NotificationChannel channel = new NotificationChannel(VOICE_CHANNEL, "Voice Call", NotificationManager.IMPORTANCE_HIGH);
-        
+
         if(!isIncoming) {
             channel.setImportance(NotificationManager.IMPORTANCE_DEFAULT);
         }
@@ -233,7 +231,7 @@ public class CallNotificationManager {
             channel.setShowBadge(true);
             channel.setDescription("Voice call notifications");
         }
-    
+
         notificationManager.createNotificationChannel(channel);
     }
 
@@ -274,7 +272,7 @@ public class CallNotificationManager {
                         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                         .setSmallIcon(R.drawable.ic_call_missed_white_24dp)
                         .setContentTitle("Missed call")
-                        .setContentText(sanatizeCallerName(callInvite.getFrom()) + " called")
+                        .setContentText(callInvite.getFrom() + " called")
                         .setAutoCancel(true)
                         .setShowWhen(true)
                         .setExtras(extras)
@@ -305,7 +303,6 @@ public class CallNotificationManager {
         }
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        // initCallNotificationsChannel(notificationManager, false);
         notificationManager.notify(MISSED_CALLS_NOTIFICATION_ID, notification.build());
     }
 

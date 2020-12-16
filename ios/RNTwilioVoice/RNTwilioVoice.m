@@ -12,6 +12,7 @@
 
 NSString * const kCachedDeviceToken = @"CachedDeviceToken";
 NSString * const kCachedDeviceTokenData = @"CachedDeviceTokenData";
+NSString * const kCallerNameCustomParameter = @"CallerName";
 
 @interface RNTwilioVoice () <PKPushRegistryDelegate, TVONotificationDelegate, TVOCallDelegate, CXProviderDelegate>
 
@@ -34,6 +35,7 @@ NSString * const kCachedDeviceTokenData = @"CachedDeviceTokenData";
 @implementation RNTwilioVoice {
   NSMutableDictionary *_settings;
   NSMutableDictionary *_callParams;
+  NSString *_tokenUrl;
   NSString *_token;
   NSData *_deviceToken;
 }
@@ -132,6 +134,11 @@ RCT_EXPORT_METHOD(setMuted: (BOOL *)muted) {
     self.activeCall.muted = muted ? YES : NO;
 }
 
+RCT_EXPORT_METHOD(setOnHold: (BOOL *)isOnHold) {
+  NSLog(@"Hold/Unhold call");
+    self.activeCall.onHold = isOnHold ? YES : NO;
+}
+
 RCT_EXPORT_METHOD(setSpeakerPhone: (BOOL *)speaker) {
     [self toggleAudioRoute: speaker ? YES : NO];
 }
@@ -215,7 +222,14 @@ RCT_REMAP_METHOD(getCallInvite,
 }
 
 - (NSString *)fetchAccessToken {
-  return _token;
+  if (_tokenUrl) {
+    NSString *accessToken = [NSString stringWithContentsOfURL:[NSURL URLWithString:_tokenUrl]
+                                                     encoding:NSUTF8StringEncoding
+                                                        error:nil];
+    return accessToken;
+  } else {
+    return _token;
+  }
 }
 
 #pragma mark - PKPushRegistryDelegate
@@ -285,11 +299,9 @@ RCT_REMAP_METHOD(getCallInvite,
     NSData *cachedDeviceTokenData = [[NSUserDefaults standardUserDefaults] objectForKey:kCachedDeviceTokenData];
 
     if ([cachedDeviceToken length] > 0) {
-        
         [[NSUserDefaults standardUserDefaults] removeObjectForKey:kCachedDeviceToken];
         
         // NSData* cachedDeviceTokenData = [cachedDeviceToken dataUsingEncoding:NSUTF8StringEncoding];
-
         [TwilioVoice unregisterWithAccessToken:accessToken
                                                 deviceToken:cachedDeviceTokenData
                                                  completion:^(NSError * _Nullable error) {
@@ -313,7 +325,7 @@ RCT_REMAP_METHOD(getCallInvite,
       // The Voice SDK will use main queue to invoke `cancelledCallInviteReceived:error` when delegate queue is not passed
       if (![TwilioVoice handleNotification:payload.dictionaryPayload delegate:self delegateQueue: nil]) {
           NSLog(@"This is not a valid Twilio Voice notification.");
-      } 
+      }
   }
 }
 
@@ -371,6 +383,9 @@ withCompletionHandler:(void (^)(void))completion {
                             [[NSCharacterSet letterCharacterSet] invertedSet]] componentsJoinedByString:@" "];
         from = [from stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         from = [from uppercaseString];
+    }
+    if (callInvite.customParameters[kCallerNameCustomParameter]) {
+        from = callInvite.customParameters[kCallerNameCustomParameter];
     }
     // Always report to CallKit
     [self reportIncomingCallFrom:from withUUID:callInvite.uuid];
@@ -540,6 +555,9 @@ withCompletionHandler:(void (^)(void))completion {
         NSLog(@"didDisconnect");
     }
 
+    UIDevice* device = [UIDevice currentDevice];
+    device.proximityMonitoringEnabled = NO;
+
     if (!self.userInitiatedDisconnect) {
         CXCallEndedReason reason = CXCallEndedReasonRemoteEnded;
         if (error) {
@@ -706,6 +724,14 @@ withCompletionHandler:(void (^)(void))completion {
     }
 }
 
+- (void)provider:(CXProvider *)provider performPlayDTMFCallAction:(CXPlayDTMFCallAction *)action {
+  TVOCall *call = self.activeCalls[action.callUUID.UUIDString];
+  if (call && call.state == TVOCallStateConnected) {
+    NSLog(@"SendDigits %@", action.digits);
+    [call sendDigits:action.digits];
+  }
+}
+
 #pragma mark - CallKit Actions
 - (void)performStartCallActionWithUUID:(NSUUID *)uuid handle:(NSString *)handle {
   if (uuid == nil || handle == nil) {
@@ -736,7 +762,9 @@ withCompletionHandler:(void (^)(void))completion {
 }
 
 - (void)reportIncomingCallFrom:(NSString *)from withUUID:(NSUUID *)uuid {
-  CXHandle *callHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:from];
+  CXHandleType type = [[from substringToIndex:1] isEqual:@"+"] ? CXHandleTypePhoneNumber : CXHandleTypeGeneric;
+  // lets replace 'client:' with ''
+  CXHandle *callHandle = [[CXHandle alloc] initWithType:type value:[from stringByReplacingOccurrencesOfString:@"client:" withString:@""]];
 
   CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
   callUpdate.remoteHandle = callHandle;

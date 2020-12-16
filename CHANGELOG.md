@@ -1,5 +1,24 @@
 [Release Section](https://github.com/hoxfon/react-native-twilio-programmable-voice/releases)
 
+## 4.3.0
+
+- iOS add handler to hold/unhold call
+
+## 4.2.0
+
+- iOS
+  - Added ability to pass caller's name to CallKit in push notification
+
+## 4.1.0
+
+- iOS
+  - Adds ability to handle DTMF codes in CallKit
+
+## 4.0.2
+
+- iOS
+  - fix: always disable proximityMonitor on iOS when the call is disconnected
+
 ## 4.0.0
 
 - Android
